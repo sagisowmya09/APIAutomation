@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>RestfulBrokerProject</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>Restful Booker API Test Suite</name>
+    <description>Rest Assured + JUnit 5 automated tests for the Restful Booker API</description>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <rest-assured.version>5.5.1</rest-assured.version>
+        <junit.version>5.11.4</junit.version>
+        <jackson.version>2.18.2</jackson.version>
+        <slf4j.version>2.0.16</slf4j.version>
+        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+
+        <!--
+          Empty defaults so Surefire can forward -DbaseUri / auth.* when set (local or Jenkins),
+          but a plain "mvn clean test" does NOT inject the literal string "${baseUri}".
+        -->
+        <baseUri></baseUri>
+        <auth.username></auth.username>
+        <auth.password></auth.password>
+        <connectTimeoutMs></connectTimeoutMs>
+        <readTimeoutMs></readTimeoutMs>
+        <!-- One retry helps with transient Heroku/network flakes on Jenkins; harmless locally -->
+        <surefire.rerunFailingTestsCount>1</surefire.rerunFailingTestsCount>
+    </properties>
+
+    <dependencies>
+        <!-- Main (helpers / API client) -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <!-- Generated reports and captured REST Assured output stay out of source control. -->
+                    <reportsDirectory>${project.build.directory}/failure-logs</reportsDirectory>
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
+                    <!-- Stable, Jenkins-friendly reporting -->
+                    <trimStackTrace>false</trimStackTrace>
+                    <rerunFailingTestsCount>${surefire.rerunFailingTestsCount}</rerunFailingTestsCount>
+                    <!-- Avoid parallel forks against the shared public API -->
+                    <forkCount>1</forkCount>
+                    <reuseForks>true</reuseForks>
+                    <systemPropertyVariables>
+                        <baseUri>${baseUri}</baseUri>
+                        <auth.username>${auth.username}</auth.username>
+                        <auth.password>${auth.password}</auth.password>
+                        <connectTimeoutMs>${connectTimeoutMs}</connectTimeoutMs>
+                        <readTimeoutMs>${readTimeoutMs}</readTimeoutMs>
+                    </systemPropertyVariables>
+                    <!--
+                      Do NOT remap env vars via ${env.*} here: when unset, Maven can inject the
+                      literal placeholder into the forked JVM. Jenkins/local both inherit the
+                      agent/shell environment automatically (RESTFUL_BOOKER_BASE_URI, etc.).
+                    -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
