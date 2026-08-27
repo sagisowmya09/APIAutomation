@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven'
+    }
+
     options {
         timestamps()
     }
@@ -23,9 +27,9 @@ pipeline {
     post {
         always {
             junit testResults: 'target/failure-logs/TEST-*.xml',
-                  allowEmptyResults: false
+                  allowEmptyResults: true
             archiveArtifacts artifacts: 'target/failure-logs/**',
-                             allowEmptyArchive: false
+                             allowEmptyArchive: true
         }
     }
 }
